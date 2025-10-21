@@ -1,92 +1,134 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. EMP-INFO-LOGIN.
-       AUTHOR. CHATGPT.
+       PROGRAM-ID. EMP-MANAGER.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT EMP-FILE ASSIGN TO "EMP.DAT"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS WS-FILE-STATUS.
 
        DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 EMP-ID        PIC 9(5).
-       01 EMP-PASS      PIC X(10).
-       01 ANSWER        PIC X.
-       01 FOUND-FLAG    PIC X VALUE "N".
-       01 IDX           PIC 9.
+       FILE SECTION.
+       FD EMP-FILE.
+       01 EMP-REC-FILE.
+           05 F-EMP-NO       PIC 9(5).
+           05 F-EMP-NAME     PIC X(20).
+           05 F-EMP-DEPT     PIC X(15).
+           05 F-EMP-JOIN     PIC 9(4).
+           05 F-EMP-PASSWORD PIC X(10).
 
-       *> 正しい社員データ（3人）
-       01 EMP-TABLE.
-           05 EMP-REC OCCURS 3 TIMES.
-              10 EMP-NO       PIC 9(5).
-              10 EMP-NAME     PIC X(20).
-              10 EMP-DEPT     PIC X(15).
-              10 EMP-JOIN     PIC 9(4).
-              10 EMP-PASSWORD PIC X(10).
+       WORKING-STORAGE SECTION.
+       01 WS-FILE-STATUS      PIC XX.
+       01 WS-ANSWER           PIC X.
+       01 WS-EMP-NO           PIC 9(5).
+       01 WS-EMP-NAME         PIC X(20).
+       01 WS-EMP-DEPT         PIC X(15).
+       01 WS-EMP-JOIN         PIC 9(4).
+       01 WS-EMP-PASSWORD     PIC X(10).
+       01 FOUND-FLAG          PIC X VALUE "N".
+       01 EOF-FLAG            PIC X VALUE "N".
 
        PROCEDURE DIVISION.
        MAIN-PARA.
-
-           *> 初期データ設定
-           MOVE 10001 TO EMP-NO (1)
-           MOVE "田中 太郎" TO EMP-NAME (1)
-           MOVE "営業部"   TO EMP-DEPT (1)
-           MOVE 2018 TO EMP-JOIN (1)
-           MOVE "PASS100" TO EMP-PASSWORD (1)
-
-           MOVE 10002 TO EMP-NO (2)
-           MOVE "佐藤 花子" TO EMP-NAME (2)
-           MOVE "総務部"   TO EMP-DEPT (2)
-           MOVE 2020 TO EMP-JOIN (2)
-           MOVE "PASS200" TO EMP-PASSWORD (2)
-
-           MOVE 10003 TO EMP-NO (3)
-           MOVE "鈴木 一郎" TO EMP-NAME (3)
-           MOVE "開発部"   TO EMP-DEPT (3)
-           MOVE 2021 TO EMP-JOIN (3)
-           MOVE "PASS300" TO EMP-PASSWORD (3)
-
            DISPLAY "==================================="
-           DISPLAY "   社員ログインシステム（COBOL）"
+           DISPLAY "   社員情報管理システム（COBOL）"
            DISPLAY "==================================="
 
-           PERFORM LOGIN-LOOP
+           OPEN I-O EMP-FILE
+           IF WS-FILE-STATUS NOT = "00"
+               DISPLAY "EMP.DAT ファイルが存在しません。"
+               DISPLAY "新規作成します。"
+               OPEN OUTPUT EMP-FILE
+               CLOSE EMP-FILE
+               OPEN I-O EMP-FILE
+           END-IF
 
-           PERFORM END-PROGRAM
-           STOP RUN.
+           PERFORM MAIN-LOOP
 
-       LOGIN-LOOP.
-           MOVE "N" TO FOUND-FLAG
-
-           DISPLAY "社員番号を入力してください："
-           ACCEPT EMP-ID
-           DISPLAY "パスワードを入力してください："
-           ACCEPT EMP-PASS
-
-           PERFORM VARYING IDX FROM 1 BY 1 UNTIL IDX > 3
-               IF EMP-ID = EMP-NO (IDX)
-                  IF EMP-PASS = EMP-PASSWORD (IDX)
-                     MOVE "Y" TO FOUND-FLAG
-                     EXIT PERFORM
-                  END-IF
-               END-IF
-           END-PERFORM
-
-           IF FOUND-FLAG = "Y"
-              DISPLAY "-----------------------------------"
-              DISPLAY "ログイン成功！ようこそ社員様。"
-              DISPLAY "社員番号：" EMP-NO (IDX)
-              DISPLAY "氏名：" EMP-NAME (IDX)
-              DISPLAY "所属部署：" EMP-DEPT (IDX)
-              DISPLAY "入社年：" EMP-JOIN (IDX)
-              DISPLAY "-----------------------------------"
-           ELSE
-              DISPLAY "ログイン失敗。番号またはパスワードが違います。"
-              DISPLAY "もう一度試しますか？ (Y/N)："
-              ACCEPT ANSWER
-              IF ANSWER = "Y" OR ANSWER = "y"
-                 PERFORM LOGIN-LOOP
-              ELSE
-                 DISPLAY "システムを終了します。"
-           END-IF.
-
-       END-PROGRAM.
+           CLOSE EMP-FILE
            DISPLAY "==============================="
            DISPLAY "   ご利用ありがとうございました。"
            DISPLAY "==============================="
-           .
+           STOP RUN.
+
+       MAIN-LOOP.
+           PERFORM UNTIL WS-ANSWER = "Q"
+               DISPLAY "-----------------------------------"
+               DISPLAY "操作を選択してください："
+               DISPLAY "1: 新しい社員を追加"
+               DISPLAY "2: 既存社員情報を確認"
+               DISPLAY "Q: 終了"
+               ACCEPT WS-ANSWER
+
+               EVALUATE WS-ANSWER
+                   WHEN "1"
+                       PERFORM ADD-EMP
+                   WHEN "2"
+                       PERFORM QUERY-EMP
+                   WHEN "Q"
+                       DISPLAY "プログラムを終了します。"
+                   WHEN OTHER
+                       DISPLAY "無効な選択です。"
+                       DISPLAY "もう一度入力してください。"
+               END-EVALUATE
+           END-PERFORM.
+
+       ADD-EMP.
+           DISPLAY "新入社員番号を入力してください："
+           ACCEPT WS-EMP-NO
+           DISPLAY "氏名を入力してください："
+           ACCEPT WS-EMP-NAME
+           DISPLAY "部署を入力してください："
+           ACCEPT WS-EMP-DEPT
+           DISPLAY "入社年（YYYY）を入力してください："
+           ACCEPT WS-EMP-JOIN
+           DISPLAY "初期パスワードを入力してください："
+           ACCEPT WS-EMP-PASSWORD
+
+           MOVE WS-EMP-NO TO F-EMP-NO
+           MOVE WS-EMP-NAME TO F-EMP-NAME
+           MOVE WS-EMP-DEPT TO F-EMP-DEPT
+           MOVE WS-EMP-JOIN TO F-EMP-JOIN
+           MOVE WS-EMP-PASSWORD TO F-EMP-PASSWORD
+
+           WRITE EMP-REC-FILE
+           DISPLAY "登録完了！"
+           DISPLAY "-----------------------------------"
+           DISPLAY "社員番号：" F-EMP-NO
+           DISPLAY "氏名：" F-EMP-NAME
+           DISPLAY "部署：" F-EMP-DEPT
+           DISPLAY "入社年：" F-EMP-JOIN
+           DISPLAY "-----------------------------------".
+
+       QUERY-EMP.
+           DISPLAY "社員番号を入力してください："
+           ACCEPT WS-EMP-NO
+           DISPLAY "パスワードを入力してください："
+           ACCEPT WS-EMP-PASSWORD
+
+           MOVE "N" TO FOUND-FLAG
+           OPEN INPUT EMP-FILE
+           PERFORM UNTIL EOF-FLAG = "Y"
+               READ EMP-FILE INTO EMP-REC-FILE
+                   AT END
+                       MOVE "Y" TO EOF-FLAG
+                   NOT AT END
+                       IF F-EMP-NO = WS-EMP-NO AND
+                          F-EMP-PASSWORD = WS-EMP-PASSWORD
+                          DISPLAY "-----------------------------------"
+                          DISPLAY "社員情報："
+                          DISPLAY "社員番号：" F-EMP-NO
+                          DISPLAY "氏名：" F-EMP-NAME
+                          DISPLAY "部署：" F-EMP-DEPT
+                          DISPLAY "入社年：" F-EMP-JOIN
+                          DISPLAY "-----------------------------------"
+                          MOVE "Y" TO FOUND-FLAG
+                       END-IF
+               END-READ
+           END-PERFORM
+           CLOSE EMP-FILE
+
+           IF FOUND-FLAG = "N"
+               DISPLAY "社員番号またはパスワードが違います。"
+           END-IF.
