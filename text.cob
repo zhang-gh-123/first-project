@@ -1,134 +1,143 @@
+       >>SOURCE FORMAT FREE
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. EMP-MANAGER.
+       PROGRAM-ID. EMPLOYEE-MANAGEMENT.
 
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT EMP-FILE ASSIGN TO "EMP.DAT"
-               ORGANIZATION IS LINE SEQUENTIAL
-               FILE STATUS IS WS-FILE-STATUS.
+           SELECT EMP-FILE ASSIGN TO "employee.dat"
+               ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
        FILE SECTION.
-       FD EMP-FILE.
-       01 EMP-REC-FILE.
-           05 F-EMP-NO       PIC 9(5).
-           05 F-EMP-NAME     PIC X(20).
-           05 F-EMP-DEPT     PIC X(15).
-           05 F-EMP-JOIN     PIC 9(4).
-           05 F-EMP-PASSWORD PIC X(10).
+       FD  EMP-FILE.
+       01  EMP-RECORD.
+           05 EMP-ID         PIC 9(5).
+           05 EMP-NAME       PIC X(20).
+           05 EMP-DEPT       PIC X(15).
+           05 EMP-AGE        PIC 99.
+           05 EMP-GENDER     PIC X(1).
 
        WORKING-STORAGE SECTION.
-       01 WS-FILE-STATUS      PIC XX.
-       01 WS-ANSWER           PIC X.
-       01 WS-EMP-NO           PIC 9(5).
-       01 WS-EMP-NAME         PIC X(20).
-       01 WS-EMP-DEPT         PIC X(15).
-       01 WS-EMP-JOIN         PIC 9(4).
-       01 WS-EMP-PASSWORD     PIC X(10).
-       01 FOUND-FLAG          PIC X VALUE "N".
-       01 EOF-FLAG            PIC X VALUE "N".
+       01  MENU-OPTION       PIC 9 VALUE 0.
+       01  WS-SEARCH-ID      PIC 9(5) VALUE ZERO.
+       01  FOUND-FLAG        PIC X VALUE "N".
+       01  END-FLAG          PIC X VALUE "N".
+       01  EOF               PIC X VALUE "N".
+
+       01  WS-EMP-DATA.
+           05 WS-EMP-ID      PIC 9(5).
+           05 WS-EMP-NAME    PIC X(20).
+           05 WS-EMP-DEPT    PIC X(15).
+           05 WS-EMP-AGE     PIC 99.
+           05 WS-EMP-GENDER  PIC X(1).
+
+       01  MSG-MENU          PIC X(80)
+           VALUE "1.登録  2.検索  3.一覧  9.終了 → ".
+       01  MSG-END           PIC X(40)
+           VALUE "システムを終了します。".
+       01  MSG-INVALID       PIC X(40)
+           VALUE "無効な選択です。再入力してください。".
 
        PROCEDURE DIVISION.
        MAIN-PARA.
-           DISPLAY "==================================="
-           DISPLAY "   社員情報管理システム（COBOL）"
-           DISPLAY "==================================="
-
-           OPEN I-O EMP-FILE
-           IF WS-FILE-STATUS NOT = "00"
-               DISPLAY "EMP.DAT ファイルが存在しません。"
-               DISPLAY "新規作成します。"
-               OPEN OUTPUT EMP-FILE
-               CLOSE EMP-FILE
-               OPEN I-O EMP-FILE
-           END-IF
-
-           PERFORM MAIN-LOOP
-
-           CLOSE EMP-FILE
-           DISPLAY "==============================="
-           DISPLAY "   ご利用ありがとうございました。"
-           DISPLAY "==============================="
+           DISPLAY "        社員管理システム             ".
+           PERFORM MAIN-LOOP.
            STOP RUN.
 
        MAIN-LOOP.
-           PERFORM UNTIL WS-ANSWER = "Q"
-               DISPLAY "-----------------------------------"
-               DISPLAY "操作を選択してください："
-               DISPLAY "1: 新しい社員を追加"
-               DISPLAY "2: 既存社員情報を確認"
-               DISPLAY "Q: 終了"
-               ACCEPT WS-ANSWER
+           DISPLAY MSG-MENU.
+           ACCEPT MENU-OPTION.
 
-               EVALUATE WS-ANSWER
-                   WHEN "1"
-                       PERFORM ADD-EMP
-                   WHEN "2"
-                       PERFORM QUERY-EMP
-                   WHEN "Q"
-                       DISPLAY "プログラムを終了します。"
-                   WHEN OTHER
-                       DISPLAY "無効な選択です。"
-                       DISPLAY "もう一度入力してください。"
-               END-EVALUATE
-           END-PERFORM.
+           EVALUATE MENU-OPTION
+               WHEN 1
+                   PERFORM REGISTER-EMPLOYEE
+               WHEN 2
+                   PERFORM SEARCH-EMPLOYEE
+               WHEN 3
+                   PERFORM LIST-EMPLOYEE
+               WHEN 9
+                   MOVE "Y" TO END-FLAG
+               WHEN OTHER
+                   DISPLAY MSG-INVALID
+           END-EVALUATE
 
-       ADD-EMP.
-           DISPLAY "新入社員番号を入力してください："
-           ACCEPT WS-EMP-NO
-           DISPLAY "氏名を入力してください："
-           ACCEPT WS-EMP-NAME
-           DISPLAY "部署を入力してください："
-           ACCEPT WS-EMP-DEPT
-           DISPLAY "入社年（YYYY）を入力してください："
-           ACCEPT WS-EMP-JOIN
-           DISPLAY "初期パスワードを入力してください："
-           ACCEPT WS-EMP-PASSWORD
+           IF END-FLAG = "Y"
+               DISPLAY MSG-END
+               STOP RUN
+           END-IF
 
-           MOVE WS-EMP-NO TO F-EMP-NO
-           MOVE WS-EMP-NAME TO F-EMP-NAME
-           MOVE WS-EMP-DEPT TO F-EMP-DEPT
-           MOVE WS-EMP-JOIN TO F-EMP-JOIN
-           MOVE WS-EMP-PASSWORD TO F-EMP-PASSWORD
+           GO TO MAIN-LOOP.
 
-           WRITE EMP-REC-FILE
-           DISPLAY "登録完了！"
-           DISPLAY "-----------------------------------"
-           DISPLAY "社員番号：" F-EMP-NO
-           DISPLAY "氏名：" F-EMP-NAME
-           DISPLAY "部署：" F-EMP-DEPT
-           DISPLAY "入社年：" F-EMP-JOIN
-           DISPLAY "-----------------------------------".
+       REGISTER-EMPLOYEE.
+           DISPLAY "社員番号を入力してください：".
+           ACCEPT WS-EMP-ID.
+           DISPLAY "氏名を入力してください：".
+           ACCEPT WS-EMP-NAME.
+           DISPLAY "部署を入力してください：".
+           ACCEPT WS-EMP-DEPT.
+           DISPLAY "年齢を入力してください：".
+           ACCEPT WS-EMP-AGE.
+           DISPLAY "性別（M/F）を入力してください：".
+           ACCEPT WS-EMP-GENDER.
 
-       QUERY-EMP.
-           DISPLAY "社員番号を入力してください："
-           ACCEPT WS-EMP-NO
-           DISPLAY "パスワードを入力してください："
-           ACCEPT WS-EMP-PASSWORD
+           OPEN EXTEND EMP-FILE.
+           MOVE WS-EMP-ID      TO EMP-ID.
+           MOVE WS-EMP-NAME    TO EMP-NAME.
+           MOVE WS-EMP-DEPT    TO EMP-DEPT.
+           MOVE WS-EMP-AGE     TO EMP-AGE.
+           MOVE WS-EMP-GENDER  TO EMP-GENDER.
+           WRITE EMP-RECORD.
+           CLOSE EMP-FILE.
 
-           MOVE "N" TO FOUND-FLAG
-           OPEN INPUT EMP-FILE
-           PERFORM UNTIL EOF-FLAG = "Y"
-               READ EMP-FILE INTO EMP-REC-FILE
+           DISPLAY "登録が完了しました。".
+           EXIT.
+
+       SEARCH-EMPLOYEE.
+           DISPLAY "検索する社員番号を入力してください：".
+           ACCEPT WS-SEARCH-ID.
+
+           MOVE "N" TO FOUND-FLAG.
+           MOVE "N" TO EOF.
+
+           OPEN INPUT EMP-FILE.
+           PERFORM UNTIL EOF = "Y"
+               READ EMP-FILE
                    AT END
-                       MOVE "Y" TO EOF-FLAG
+                       MOVE "Y" TO EOF
                    NOT AT END
-                       IF F-EMP-NO = WS-EMP-NO AND
-                          F-EMP-PASSWORD = WS-EMP-PASSWORD
-                          DISPLAY "-----------------------------------"
-                          DISPLAY "社員情報："
-                          DISPLAY "社員番号：" F-EMP-NO
-                          DISPLAY "氏名：" F-EMP-NAME
-                          DISPLAY "部署：" F-EMP-DEPT
-                          DISPLAY "入社年：" F-EMP-JOIN
-                          DISPLAY "-----------------------------------"
-                          MOVE "Y" TO FOUND-FLAG
+                       IF EMP-ID = WS-SEARCH-ID
+                           MOVE "Y" TO FOUND-FLAG
+                           PERFORM DISPLAY-EMPLOYEE
                        END-IF
                END-READ
-           END-PERFORM
-           CLOSE EMP-FILE
+           END-PERFORM.
+           CLOSE EMP-FILE.
 
            IF FOUND-FLAG = "N"
-               DISPLAY "社員番号またはパスワードが違います。"
+               DISPLAY "該当する社員が見つかりませんでした。"
            END-IF.
+           EXIT.
+
+       LIST-EMPLOYEE.
+           MOVE "N" TO EOF.
+           OPEN INPUT EMP-FILE.
+           DISPLAY "社員番号  氏名          部署        年齢 性別".
+           PERFORM UNTIL EOF = "Y"
+               READ EMP-FILE
+                   AT END
+                       MOVE "Y" TO EOF
+                   NOT AT END
+                       DISPLAY EMP-ID SPACE EMP-NAME SPACE EMP-DEPT SPACE EMP-AGE SPACE EMP-GENDER
+               END-READ
+           END-PERFORM.
+           CLOSE EMP-FILE.
+           EXIT.
+
+       DISPLAY-EMPLOYEE.
+           DISPLAY "社員番号：" EMP-ID.
+           DISPLAY "氏名　　：" EMP-NAME.
+           DISPLAY "部署　　：" EMP-DEPT.
+           DISPLAY "年齢　　：" EMP-AGE.
+           DISPLAY "性別　　：" EMP-GENDER.
+           EXIT.
